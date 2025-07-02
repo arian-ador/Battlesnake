@@ -1,26 +1,18 @@
-# Welcome to
-# __________         __    __  .__                               __
-# \______   \_____ _/  |__/  |_|  |   ____   ______ ____ _____  |  | __ ____
-#  |    |  _/\__  \\   __\   __\  | _/ __ \ /  ___//    \\__  \ |  |/ // __ \
-#  |    |   \ / __ \|  |  |  | |  |_\  ___/ \___ \|   |  \/ __ \|    <\  ___/
-#  |________/(______/__|  |__| |____/\_____>______>___|__(______/__|__\\_____>
-#
-import random
 import typing
+import random
+import heapq
+import copy
 
+MAX_DEPTH = 2 # Maximum depth for the minimax algorithm
 
-# info is called when you create your Battlesnake on play.battlesnake.com
-# and controls your Battlesnake's appearance
-# TIP: If you open your Battlesnake URL in a browser you should see this data
-def info() -> typing.Dict:
-    print("INFO")
-
-    return {
+def info() -> typing.Dict: 
+    print("INFO") 
+    return { 
         "apiversion": "1",
-        "author": "Naughtysnake",  # TODO: Your Battlesnake Username
-        "color": "#66b3ff",  # TODO: Choose color
-        "head": "mlh-gene",  # TODO: Choose head
-        "tail": "ice-skate",  # TODO: Choose tail
+        "author": "Naughtysnake",  # My Battlesnake Username
+        "color": "#66b3ff",  # Choose color
+        "head": "mlh-gene",  # Choose head
+        "tail": "ice-skate",  # Choose tail
     }
 
 
@@ -28,12 +20,21 @@ def info() -> typing.Dict:
 def start(game_state: typing.Dict):
     print("GAME START")
 
-
 # end is called when your Battlesnake finishes a game
 def end(game_state: typing.Dict):
     print("GAME OVER\n")
 
-
+# is_safe is called when your Battlesnake is trying to move to a square and checks if it is safe to move there
+def is_safe(pos, my_body, opponents, board_width, board_height):  
+    x, y = pos[0], pos[1]
+    new_pos = {"x": x, "y": y}
+    if not (0 <= x < board_width and 0 <= y < board_height):  # Prevent your Battlesnake from moving out of bounds
+        return False 
+    if new_pos in my_body: # Prevent your Battlesnake from colliding with itself
+        return False             
+    for snake in opponents:
+        if new_pos in snake['body']: # Prevent your Battlesnake from colliding with other Battlesnakes
+            return False
 # move is called on every turn and returns your next move
 # Valid moves are "up", "down", "left", or "right"
 def move(game_state: typing.Dict) -> typing.Dict:
@@ -56,30 +57,10 @@ def move(game_state: typing.Dict) -> typing.Dict:
         "right": [my_head['x'] + 1, my_head['y']]
     }
     safe_moves = []
-    
-    if my_neck["x"] < my_head["x"]:  # Neck is left of head, don't move left
-        is_move_safe["left"] = False
-
-    elif my_neck["x"] > my_head["x"]:  # Neck is right of head, don't move right
-        is_move_safe["right"] = False
-
-    elif my_neck["y"] < my_head["y"]:  # Neck is below head, don't move down
-        is_move_safe["down"] = False
-
-    elif my_neck["y"] > my_head["y"]:  # Neck is above head, don't move up
-        is_move_safe["up"] = False
 
     
     # Step 1 - Prevent your Battlesnake from moving out of bounds
-    for move, pos in direction.items():
-        x, y = pos[0], pos[1]
-        new_pos = {"x": x, "y": y}
-        # Check the Walls
-        if not (0 <= x < board_width and 0 <= y < board_height):
-            continue 
-    # Step 2 - Prevent your Battlesnake from colliding with itself
-        if new_pos in my_body:
-            continue             
+   
     # Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
         collision = False
         for snake in opponents:
