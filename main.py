@@ -9,7 +9,7 @@ def info() -> typing.Dict:
     print("INFO")
     return {
         "apiversion": "1",
-        "author": "Naughtysnake",  # My Battlesnake Username
+        "author": "Gruppe 17",  # Our Team
         "color": "#88000",  # Choose color
         "head": "mlh-gene",  # Choose head
         "tail": "ice-skate",  # Choose tail
@@ -26,7 +26,7 @@ def end(game_state: typing.Dict):
     print("GAME OVER\n")
 
 
-# is_safe is called when your Battlesnake is trying to move to a square and checks if it is safe to move there
+# when your Battlesnake is trying to move to a square and checks if it is safe to move there
 def is_safe(pos, my_body, opponents, board_width, board_height):
     if not (0 <= pos["x"] < board_width and 0 <= pos["y"] < board_height):
         return False
@@ -36,8 +36,17 @@ def is_safe(pos, my_body, opponents, board_width, board_height):
         if pos in snake["body"]:
             return False
     return True
-
-
+    
+# Check if the snake is in danger of colliding with another snake's head
+def head_collision_danger(pos, opponents, my_length): 
+    danger = 0
+    for snake in opponents:
+        enemy_head = snake["body"][0]
+        if abs(pos["x"] - enemy_head["x"]) + abs(pos["y"] - enemy_head["y"]) == 1:
+            if len(snake["body"]) >= my_length:
+                danger += 1
+    return danger
+    
 # Get the neighbors position
 def get_neighbors(pos):
     return [
@@ -60,17 +69,14 @@ def eval_state(my_head, my_body, opponents, food_list, board_width, board_height
     # Find the move that brings the snake closest to the nearest food
     nearest_food = min(food_list, key=lambda f: manhattan_dist(my_head, f))
     dist_tofood = manhattan_dist(my_head, nearest_food)
-
-    space_score = sum(  # Calculate the number of safe spaces around the snake
+    # Calculate the number of safe spaces
+    space_score = sum(  
         1 for neighbor in get_neighbors(my_head)
         if is_safe(neighbor, my_body, opponents, board_width, board_height))
+    # Calculate the danger of colliding with another snake
+    danger = head_collision_danger(my_head, opponents,len(my_body))
 
-    danger = sum(  # If the opponent is close and bigger than you, it is dangerous
-        1 for snake in opponents
-        if manhattan_dist(my_head, snake["body"][0]) == 1
-        and len(snake["body"]) >= len(my_body))
-
-
+    # Return the evaluation score
     return -3 * dist_tofood + 2 * space_score - 6 * danger     
 
 
@@ -83,37 +89,42 @@ def minimax(game_state, depth, alpha, beta, maximizing_player):
     opponents = board["snakes"]
     board_width = board["width"]
     board_height = board["height"]
-    health = game_state["you"]["health"]
 
-    if depth == 0 or not food_list:  # If the maximum depth is reached or there is no food on the board
+    # if the game is over or the maximum depth is reached
+    if depth == 0 or not food_list:  
         return eval_state(my_head, my_body, opponents, food_list, board_width, board_height), None
-
-    direction = {  # Directions for the snake to move
+        
+    # Define the possible moves
+    direction = {  
         "up": {"x": my_head["x"], "y": my_head["y"] + 1},
         "down": {"x": my_head["x"], "y": my_head["y"] - 1},
         "left": {"x": my_head["x"] - 1, "y": my_head["y"]},
         "right": {"x": my_head["x"] + 1, "y": my_head["y"]}
     }
-    best_move = None
-
-    if maximizing_player:  # Maximizing player
+    best_move = None  # Initialize the best move
+    
+    # Maximizing player
+    if maximizing_player:  
         max_eval = float('-inf')
         for move, new_head in direction.items():
-            if not is_safe(new_head, my_body, opponents, board_width, board_height):  # If the move is not safe, skip it
-                continue
+            if not is_safe(new_head, my_body, opponents, board_width, board_height):  
+                continue   # If the move is not safe, skip it
 
             new_body = [new_head] + my_body[:-1]  # Update the body of the snake
             new_state = copy.deepcopy(game_state)  # Create a copy of the game state
             new_state['you']['body'] = new_body  # Update the body of the snake in the new game state
             new_state["you"]["health"] -= 1  # Decrease the health of the snake
+            
             eval, _ = minimax(new_state, depth - 1, alpha, beta, False)  # Recursive call
             if eval > max_eval:
                 max_eval = eval
                 best_move = move
+                
             alpha = max(alpha, eval)  # Update alpha
             if beta <= alpha:  # Alpha-Beta Pruning
                 break
         return max_eval, best_move  # Return the maximum evaluation score and the best move
+        
     else:  # Minimizing player
         min_eval = float('inf')
         for move, new_head in direction.items():
@@ -131,9 +142,11 @@ def minimax(game_state, depth, alpha, beta, maximizing_player):
 
 # snake move function
 def move(game_state: typing.Dict) -> typing.Dict:
-    _, best_move = minimax(game_state, MAX_DEPTH, float('-inf'), float('inf'), True)  # Call the minimax algorithm
+    # Call the minimax algorithm to find the best move
+    _, best_move = minimax(game_state, MAX_DEPTH, float('-inf'), float('inf'), True)  
+    # If no best move is found, choose a random move
     if not best_move:
-        best_move = random.choice(["up", "down", "left", "right"])  # If no best move is found, choose a random move
+        best_move = random.choice(["up", "down", "left", "right"])  
 
 
     print(f"MOVE {game_state['turn']}: {best_move}")
