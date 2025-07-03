@@ -39,7 +39,7 @@ def is_safe(pos, my_body, opponents, board_width, board_height):
 
 
 # Get the neighbors position
-def get_neighbors(pos):
+def neighbors(pos):
     return [
         {"x": pos["x"] + 1, "y": pos["y"]},  # Right
         {"x": pos["x"] - 1, "y": pos["y"]},  # Left
@@ -49,32 +49,30 @@ def get_neighbors(pos):
 
 
 # Calculate distance between two points
-def manhattan_dist(p1, p2):
+def towpoint(p1, p2):
     return abs(p1["x"] - p2["x"]) + abs(p1["y"] - p2["y"])
 
 
 # Evaluate the state of the game
-def eval_state(my_head, my_body, opponents, food_list, board_width, board_height, health):
+def eval_state(my_head, my_body, opponents, food_list, board_width, board_height):
     if not food_list:  # If there is not food on the board
         return 0
     # Find the move that brings the snake closest to the nearest food
-    nearest_food = min(food_list, key=lambda f: manhattan_dist(my_head, f))
-    dist_tofood = manhattan_dist(my_head, nearest_food)
+    nearest_food = min(food_list, key=lambda f: towpoint(my_head, f))
+    dist_tofood = towpoint(my_head, nearest_food)
 
     space_score = sum(  # Calculate the number of safe spaces around the snake
-        1 for neighbor in get_neighbors(my_head)
-        if is_safe(neighbor, my_body, opponents, board_width, board_height))
+        1 for n in neighbors(my_head)
+        if is_safe(n, my_body, opponents, board_width, board_height))
 
     danger = sum(  # If the opponent is close and bigger than you, it is dangerous
         1 for snake in opponents
-        if manhattan_dist(my_head, snake["body"][0]) == 1
+        if towpoint(my_head, snake["body"][0]) == 1
         and len(snake["body"]) >= len(my_body))
 
-    if health < 40:  # If the snake is low on health, prioritize food
-        return -5 * dist_tofood + 2 * space_score - 3 * danger     
-    else:
-        return -3 * dist_tofood + 2 * space_score - 5 * danger
-
+      # If the snake is low on health, prioritize food
+    return -3 * dist_tofood + 2 * space_score - 4 * danger     
+    
 # Minimax algorithm and Alpha-Beta Pruning
 def minimax(game_state, depth, alpha, beta, maximizing_player):
     my_body = game_state["you"]["body"]
@@ -84,10 +82,10 @@ def minimax(game_state, depth, alpha, beta, maximizing_player):
     opponents = board["snakes"]
     board_width = board["width"]
     board_height = board["height"]
-    health = game_state["you"]["health"]
+    
     
     if depth == 0 or not food_list:  # If the maximum depth is reached or there is no food on the board
-        return eval_state(my_head, my_body, opponents, food_list, board_width, board_height, health), None
+        return eval_state(my_head, my_body, opponents, food_list, board_width, board_height), None
 
     direction = {  # Directions for the snake to move
         "up": {"x": my_head["x"], "y": my_head["y"] + 1},
