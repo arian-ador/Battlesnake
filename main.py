@@ -1,3 +1,10 @@
+# Gruppe 17:
+# Arian Akbari, 224100357
+# Hueseyin Kayabasi, 223201801
+# Johannes Langer, 221200970
+# Helin Oguz, 223202103
+# Cagla Yesildogan, 223201881
+
 import typing
 import random
 import copy
@@ -10,7 +17,7 @@ def info() -> typing.Dict:
     return {
         "apiversion": "1",
         "author": "Gruppe 17",  # Our Team
-        "color": "#88000",  # Choose color
+        "color": "#FF0000",  # Choose color
         "head": "mlh-gene",  # Choose head
         "tail": "ice-skate",  # Choose tail
     }
